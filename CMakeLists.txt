@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.15)
 
 #! CHANGE YOUR PROJECT NAME
 #  It is used as your project's main executable name. 
-set(PROJECT_NAME template)
+set(PROJECT_NAME my_vector)
 project(${PROJECT_NAME} C CXX) # project(${PROJECT_NAME} C CXX ASM)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -51,21 +51,54 @@ endif ()
 include(cmake/CompilerWarnings.cmake)
 
 ##########################################################
-# Project files, packages, libraries and so on
+# Header-only Libraries (INTERFACE)
 ##########################################################
 
-#! Project main executable source compilation
-add_executable(${PROJECT_NAME} main.cpp
-				options_parser/options_parser.cpp options_parser/options_parser.h)
+add_library(my_vector_lib INTERFACE)
+target_include_directories(my_vector_lib INTERFACE include)
 
-#! Put path to your project headers
-target_include_directories(${PROJECT_NAME} PRIVATE options_parser)
+add_library(my_array_lib INTERFACE)
+target_include_directories(my_array_lib INTERFACE include)
 
-#! Add external packages
-# options_parser requires boost::program_options library
-find_package(Boost 1.71.0 COMPONENTS program_options system REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} Boost::program_options Boost::system)
+##########################################################
+# Main executable
+##########################################################
+
+add_executable(${PROJECT_NAME} src/main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE my_vector_lib my_array_lib)
+
+INSTALL(PROGRAMS
+		$<TARGET_FILE:${PROJECT_NAME}>
+		DESTINATION bin)
+
+set(ALL_TARGETS ${PROJECT_NAME})
+
+include(cmake/main-config.cmake)
+
+##########################################################
+# GoogleTest setup and test targets
+##########################################################
+
+include(FetchContent)
+FetchContent_Declare(
+		googletest
+		URL https://github.com/google/googletest/archive/refs/heads/main.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+include(GoogleTest)
+
+# === my_vector tests ===
+add_executable(test_my_vector tests/test_my_vector.cpp)
+target_link_libraries(test_my_vector PRIVATE gtest_main my_vector_lib)
+gtest_discover_tests(test_my_vector)
+
+# === my_array tests ===
+add_executable(test_my_array tests/test_my_array.cpp)
+target_link_libraries(test_my_array PRIVATE gtest_main my_array_lib)
+gtest_discover_tests(test_my_array)
 
 ##########################################################
 # Fixed CMakeLists.txt part
