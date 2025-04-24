@@ -140,15 +140,23 @@ public:
 
     reference back() {
         if (is_empty()) throw std::out_of_range("MyVector::back");
-        return data_[size_ - 1];
-    }
-    const_reference back() const {
-        if (is_empty()) throw std::out_of_range("MyVector::back");
-        return data_[size_ - 1];
+        return *(end() - 1);
     }
 
-    iterator begin() noexcept { return data_; }
-    iterator end() noexcept { return data_ + size_; }
+    const_reference back() const {
+        if (is_empty()) throw std::out_of_range("MyVector::back");
+        return *(end() - 1);
+    }
+
+    iterator begin() noexcept
+    {
+        return iterator(data_);
+    }
+
+    iterator end() noexcept
+    {
+        return iterator(data_+size_);
+    }
     const_iterator begin() const noexcept { return data_; }
     const_iterator end() const noexcept { return data_ + size_; }
     const_iterator cbegin() const noexcept { return data_; }
@@ -275,6 +283,13 @@ public:
     void push_back(const T& value) {
         if (size_ == capacity_) reserve(capacity_ ? capacity_ * 2 : 1);
         new (&data_[size_]) T(value);
+        ++size_;
+    }
+
+    void push_back(T&& value)
+    {
+        if (size_ == capacity_) reserve(capacity_ ? capacity_ * 2 : 1);
+        new (&data_[size_]) T(std::move(value));
         ++size_;
     }
 
