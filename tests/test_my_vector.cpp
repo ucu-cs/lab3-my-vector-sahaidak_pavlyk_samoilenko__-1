@@ -16,7 +16,7 @@ TEST(MyVector, DefaultConstructor) {
 }
 
 TEST(MyVector, FillConstructor) {
-    MyVector<int> v(5, 42);
+    MyVector<int> v(static_cast<size_t>(5), 42);
     EXPECT_EQ(v.size(), 5);
     for (int i = 0; i < 5; ++i)
         EXPECT_EQ(v[i], 42);
@@ -90,7 +90,6 @@ TEST(MyVector, Iterators) {
     EXPECT_EQ(*it, 2);
 }
 
-// ?
 TEST(MyVector, BackInserterCompatibility) {
     MyVector<int> v;
     std::vector<int> source = {1, 2, 3};
@@ -127,7 +126,7 @@ TEST(MyVector, ResizeGrowDefault) {
     MyVector<int> v{1, 2};
     v.resize(5);
     EXPECT_EQ(v.size(), 5);
-    EXPECT_EQ(v[2], {});  // Default initialized values
+    EXPECT_EQ(v[2], {});
 }
 
 TEST(MyVector, InsertSingle) {
@@ -174,7 +173,7 @@ TEST(MyVector, EraseRange) {
 
 TEST(MyVector, EraseFromEmpty) {
     MyVector<int> v;
-    EXPECT_NO_THROW(v.erase(v.begin()));  // No-op for an empty vector.
+    EXPECT_THROW(v.erase(v.begin()), std::out_of_range);
 }
 
 TEST(MyVector, PushPopEmplaceBack) {
@@ -249,10 +248,10 @@ TEST(MyVector, PushBackSelfBack) {
 
 TEST(MyVector, NestedPushBackSelfBack) {
     MyVector<MyVector<int>> v;
-    v.push_back({1, 2});
+    MyVector<int> tmp = {1, 2};
+    v.push_back(tmp);
     v.push_back(v.back()); // Copy of the last vector
 
     ASSERT_EQ(v.size(), 2);
     EXPECT_EQ(v[1], v[0]); // Must be deep copy
 }
-

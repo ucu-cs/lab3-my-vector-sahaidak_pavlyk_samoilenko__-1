@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 #! Check every comment after the "#!"
 
 #! CHANGE YOUR PROJECT NAME
-#  It is used as your project's main executable name. 
+#  It is used as your project's main executable name.
 set(PROJECT_NAME my_vector)
 project(${PROJECT_NAME} C CXX) # project(${PROJECT_NAME} C CXX ASM)
 
@@ -51,55 +51,70 @@ endif ()
 include(cmake/CompilerWarnings.cmake)
 
 ##########################################################
-# Header-only Libraries (INTERFACE)
+# Project files, packages, libraries and so on
 ##########################################################
+
+# Main executable
+add_executable(${PROJECT_NAME} src/main.cpp)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
+
+# Header-only libraries
+add_library(my_array_lib INTERFACE)
+target_include_directories(my_array_lib INTERFACE include)
 
 add_library(my_vector_lib INTERFACE)
 target_include_directories(my_vector_lib INTERFACE include)
 
-add_library(my_array_lib INTERFACE)
-target_include_directories(my_array_lib INTERFACE include)
-
-##########################################################
-# Main executable
-##########################################################
-
-add_executable(${PROJECT_NAME} src/main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE my_vector_lib my_array_lib)
-
-INSTALL(PROGRAMS
-		$<TARGET_FILE:${PROJECT_NAME}>
-		DESTINATION bin)
-
-set(ALL_TARGETS ${PROJECT_NAME})
-
-include(cmake/main-config.cmake)
-
-##########################################################
-# GoogleTest setup and test targets
-##########################################################
-
-include(FetchContent)
-FetchContent_Declare(
-		googletest
-		URL https://github.com/google/googletest/archive/refs/heads/main.zip
+# Link libraries to main executable
+target_link_libraries(${PROJECT_NAME} PRIVATE
+		my_array_lib
+		my_vector_lib
 )
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+
+#! Add external packages
+# options_parser requires boost::program_options library
+#find_package(Boost 1.71.0 COMPONENTS program_options system REQUIRED)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIR})
+#target_link_libraries(${PROJECT_NAME} Boost::program_options Boost::system)
+
+##########################################################
+# Google Test integration
+##########################################################
+find_package(GTest QUIET)
+
+if(NOT GTest_FOUND)
+	message(STATUS "GTest not found, downloading via FetchContent")
+	include(FetchContent)
+	FetchContent_Declare(
+			googletest
+			GIT_REPOSITORY https://github.com/google/googletest.git
+			GIT_TAG release-1.12.1
+	)
+	FetchContent_MakeAvailable(googletest)
+
+	if(NOT TARGET GTest::GTest)
+		add_library(GTest::GTest ALIAS gtest)
+		add_library(GTest::Main ALIAS gtest_main)
+	endif()
+endif()
 
 enable_testing()
-include(GoogleTest)
 
-# === my_vector tests ===
-add_executable(test_my_vector tests/test_my_vector.cpp)
-target_link_libraries(test_my_vector PRIVATE gtest_main my_vector_lib)
-gtest_discover_tests(test_my_vector)
-
-# === my_array tests ===
 add_executable(test_my_array tests/test_my_array.cpp)
-target_link_libraries(test_my_array PRIVATE gtest_main my_array_lib)
-gtest_discover_tests(test_my_array)
+target_link_libraries(test_my_array PRIVATE
+		my_array_lib
+		GTest::GTest
+		GTest::Main
+)
+add_test(NAME test_my_array COMMAND test_my_array)
 
+add_executable(test_my_vector tests/test_my_vector.cpp)
+target_link_libraries(test_my_vector PRIVATE
+		my_vector_lib
+		GTest::GTest
+		GTest::Main
+)
+add_test(NAME test_my_vector COMMAND test_my_vector)
 ##########################################################
 # Fixed CMakeLists.txt part
 ##########################################################

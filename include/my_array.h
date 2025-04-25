@@ -23,6 +23,16 @@ public:
         }
     }
 
+    template<typename InputIt>
+    MyArray(InputIt first, InputIt last) {
+            size_t i = 0;
+            for (; first != last && i < N; ++first, ++i)
+                data_[i] = *first;
+            for (; i < N; ++i)
+                data_[i] = T();
+        }
+
+
     MyArray(std::initializer_list<T> init) {
         std::size_t count = std::min(init.size(), N);
         std::copy_n(init.begin(), count, data_);
